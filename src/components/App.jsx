@@ -1,4 +1,4 @@
-import React from 'react';
+import React, { useState, useEffect } from 'react';
 import { AllImages } from '../api';
 import Searchbar from './Searchbar/Searchbar';
 import ImageGallery from './ImageGallery/ImageGallery';
@@ -6,93 +6,79 @@ import Loader from './Loader/Loader';
 import Button from './Button/Button';
 import Modal from './Modal/Modal';
 import GlobalStyle from './GlobalStyle';
-import './App.styled';
 import { AppStyle, NoImageStyle } from './App.styled';
 
-class App extends React.Component {
-  state = {
-    query: '',
-    images: [],
-    page: 1,
-    loading: false,
-    showModal: false,
-    selectedImage: null,
-    per_page: 12,
-    loadMore: false,
-    error: null
-  };
+const App = () => {
+  const [query, setQuery] = useState('');
+  const [images, setImages] = useState([]);
+  const [page, setPage] = useState(1);
+  const [loading, setLoading] = useState(false);
+  const [showModal, setShowModal] = useState(false);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [, setPer_page] = useState(12);
+  const [loadMore, setLoadMore] = useState(false);
+  const [error, setError] = useState(null);
 
-
-  componentDidUpdate(prevProps, prevState) {
-    if (
-      prevState.query !== this.state.query ||
-      prevState.page !== this.state.page
-    ) {
-      this.fetchImages();
-    }
-  }
-
-  handleClick = (evt) => {
+  useEffect(() => {
+    if (!query) return;
+  
+    const fetchImages = async () => {
+      try {
+        setLoading(true);
+  
+        const imagesSet = await AllImages(query, page);
+        const { images, totalHits } = imagesSet;
+  
+        setImages(prevImages => [...prevImages, ...images]);
+        setLoadMore(page < Math.ceil(totalHits /setPer_page));
+      } catch (error) {
+        setError(error);
+      } finally {
+        setLoading(false);
+      }
+    };
+  
+    fetchImages();
+  }, [query, page]);
+  
+  const handleClick = (evt) => {
     evt.preventDefault();
     const query = evt.target.elements.query.value.trim();
 
     if (query !== '') {
-      this.setState({ query, images: [], page: 1 });
+      setQuery(query);
+      setImages([]);
+      setPage(1);
     }
-  }
-
-  fetchImages = async () => {
-    const { query, page } = this.state;
-    try {
-      const imagesSet = await AllImages(query, page);
-      const { images, totalHits } = imagesSet;
-
-      this.setState((prevState) => ({
-        images: [...prevState.images, ...images],
-        loadMore: prevState.page < Math.ceil(totalHits / prevState.per_page),
-      }));
-    } catch (error) {
-      this.setState({error})
-    } finally{
-      this.setState({loading: false})
-    }
-   
-  }
-
-  handleLoader = () => {
-    
-    this.setState((prevState) => ({
-      page: prevState.page + 1,
-    }));
-  }
-
-  toggleModal = (selectedImage) => {
-    this.setState((prevState) => ({
-      showModal: !prevState.showModal,
-      selectedImage,
-    }));
   };
 
-  render() {
-    const { loading, images, showModal, selectedImage, loadMore, error } = this.state;
 
-    const renderLoadMoreButton = loadMore && images.length > 0 && !loading;
 
-    return (
-      <AppStyle>
-        <Searchbar onSubmit={this.handleClick} />
-        {images.length > 0 && <ImageGallery images={images} onClick={this.toggleModal} />}
-        {loading && <Loader />}
-        {error && <NoImageStyle>Sorry, something went wrong</NoImageStyle>}
-        {images.length === 0 && <NoImageStyle>No image was found for your request</NoImageStyle>}
-        {renderLoadMoreButton && <Button buttonLoadMore={this.handleLoader} />}
-        {showModal && (
-          <Modal selectedImage={selectedImage} onClose={this.toggleModal} />
-        )}
-        <GlobalStyle />
-      </AppStyle>
-    );
-  }
-}
+  const handleLoader = () => {
+    setPage(prevPage => prevPage + 1);
+  };
+
+  const toggleModal = (selectedImage) => {
+    setShowModal(prevState => !prevState.showModal);
+    setSelectedImage(selectedImage);
+  };
+
+  const renderLoadMoreButton = loadMore && images.length > 0 && !loading;
+
+  return (
+    <AppStyle>
+      <Searchbar onSubmit={handleClick} />
+      {images.length > 0 && <ImageGallery images={images} onClick={toggleModal} />}
+      {loading && <Loader />}
+      {error && <NoImageStyle>Sorry, something went wrong</NoImageStyle>}
+      {images.length === 0 && <NoImageStyle>No image was found for your request</NoImageStyle>}
+      {renderLoadMoreButton && <Button buttonLoadMore={handleLoader} />}
+      {showModal && (
+        <Modal selectedImage={selectedImage} onClose={toggleModal} />
+      )}
+      <GlobalStyle />
+    </AppStyle>
+  );
+};
 
 export default App;
