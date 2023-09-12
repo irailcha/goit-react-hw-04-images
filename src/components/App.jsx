@@ -29,7 +29,7 @@ const App = () => {
         const { images, totalHits } = imagesSet;
   
         setImages(prevImages => [...prevImages, ...images]);
-        setLoadMore(page < Math.ceil(totalHits /page));
+        setLoadMore(page < Math.ceil(totalHits /12));
       } catch (error) {
         setError(error);
       } finally {
@@ -57,23 +57,29 @@ const App = () => {
     setPage(prevPage => prevPage + 1);
   };
 
-  const toggleModal = (selectedImage) => {
-    setShowModal(prevState => !prevState.showModal);
+  const openModal = selectedImage => {
+    setShowModal(true)
     setSelectedImage(selectedImage);
-  };
+  }
+  const closeModal = () => {
+     setShowModal(false);
+     setSelectedImage(null);
+  }
+
+
 
   const renderLoadMoreButton = loadMore && images.length > 0 && !loading;
 
   return (
     <AppStyle>
       <Searchbar onSubmit={handleClick} />
-      {images.length > 0 && <ImageGallery images={images} onClick={toggleModal} />}
+      {images.length > 0 && <ImageGallery images={images} onClick={openModal} />}
       {loading && <Loader />}
       {error && <NoImageStyle>Sorry, something went wrong</NoImageStyle>}
       {images.length === 0 && <NoImageStyle>No image was found for your request</NoImageStyle>}
       {renderLoadMoreButton && <Button buttonLoadMore={handleLoader} />}
       {showModal && (
-        <Modal selectedImage={selectedImage} onClose={toggleModal} />
+        <Modal selectedImage={selectedImage} onClose={closeModal} />
       )}
       <GlobalStyle />
     </AppStyle>
