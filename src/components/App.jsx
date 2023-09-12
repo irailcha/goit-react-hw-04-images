@@ -15,7 +15,6 @@ const App = () => {
   const [loading, setLoading] = useState(false);
   const [showModal, setShowModal] = useState(false);
   const [selectedImage, setSelectedImage] = useState(null);
-  const [, setPer_page] = useState(12);
   const [loadMore, setLoadMore] = useState(false);
   const [error, setError] = useState(null);
 
@@ -30,7 +29,7 @@ const App = () => {
         const { images, totalHits } = imagesSet;
   
         setImages(prevImages => [...prevImages, ...images]);
-        setLoadMore(page < Math.ceil(totalHits /setPer_page));
+        setLoadMore(page < Math.ceil(totalHits /page));
       } catch (error) {
         setError(error);
       } finally {
